@@ -3,9 +3,8 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
-const { hashPassword } = require('../utils/bcryptUtils');
 const { transporter } = require('../Utils/nodemailer');
-const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 const { auth, adminAuth } = require('../middleware/authMiddleware');
 
 // Endpoint to for admin verification
@@ -102,7 +101,7 @@ router.post('/register', async (req, res) => {
             });
         }
 
-        const hashedPassword = await hashPassword(req.body.password);
+        const hashedPassword = await crypto.createHash('sha256').update(req.body.password).digest('hex');
 
         const user = new User({
             name: req.body.name,
@@ -160,9 +159,6 @@ router.post('/signin', async (req, res) => {
         const { email, password } = req.body;
 
         // Check if the user exists
-
-
-        console.log(email, password, 'comed')
         const user = await User.findOne({ email });
         if (!user) {
             return res.status(401).json({
@@ -172,13 +168,16 @@ router.post('/signin', async (req, res) => {
         }
 
         // Compare the password
-        const passwordMatch = await bcrypt.compare(password, user.password);
-        if (!passwordMatch) {
+        // const passwordMatch = await bcrypt.compare(password, user.password);
+        const passwordMatch = await crypto.createHash('sha256').update(password).digest('hex');
+        console.log(email, user.password, passwordMatch );
+        if (user.password!=passwordMatch) {
             return res.status(401).json({
                 success: false,
                 message: 'Invalid email or password',
             });
         }
+
 
         // Create token
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);

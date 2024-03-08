@@ -1,9 +1,9 @@
-const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 
-const saltRounds = 10;
+const algorithm = 'sha512';
 
-async function hashPassword(password) {
-    const hash = await bcrypt.hash(password, saltRounds);
+function hashPassword(password) {
+    const hash = crypto.createHash(algorithm).update(password).digest('hex');
     return hash;
 }
 
